@@ -41,7 +41,7 @@ EC2_METRIC_TYPE = "ec2-metric"
 EBS_METRIC_TYPE = "ebs-metric"
 ELB_METRIC_TYPE = "elb-metric"
 RDS_METRIC_TYPE = "rds-metric"
-Elasticache_METRIC_TYPE = "elasticache-metric"
+ELASTICACHE_METRIC_TYPE = "elasticache-metric"
 
 NAGIOS_CODE_OK = 0		# UP
 NAGIOS_CODE_WARNING = 1		# UP or DOWN/UNREACHABLE*
@@ -272,7 +272,7 @@ opts.each { |opt, arg|
       namespace = AWS_NAMESPACE_RDS
     when '--elasticache-metric'
       metric = arg
-      metric_type = Elasticache_METRIC_TYPE
+      metric_type = ELASTICACHE_METRIC_TYPE
       namespace = AWS_NAMESPACE_ELASTICACHE
     when '--stat'
       stat = arg
