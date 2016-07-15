@@ -12,3 +12,4 @@ https://exchange.nagios.org/directory/Plugins/Operating-Systems/*-Virtual-Enviro
 
 ##  1.0.0
     -   Initial fork of the Nagios AWS CloudWatch plugin (2.5.07)
+    -   Initial fork of the encrypt_credentials.rb script
