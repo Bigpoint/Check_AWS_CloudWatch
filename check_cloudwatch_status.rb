@@ -201,7 +201,7 @@ opts.each { |opt, arg|
           ec2_endpoint = "ec2.us-west-2.amazonaws.com"
           rds_endpoint = "rds.us-west-2.amazonaws.com"
           elb_endpoint = "elasticloadbalancing.us-west-2.amazonaws.com"
-          elasticache_endpoint = "elasticache.us-west-2.amazonaws.com" #todo check this
+          elasticache_endpoint = "elasticache.us-west-2.amazonaws.com"
           cloudwatch_endpoint = "monitoring.us-west-2.amazonaws.com"
           region = "us-west-2"  
         when /eu-west-1/
