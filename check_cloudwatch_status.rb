@@ -35,7 +35,7 @@ AWS_NAMESPACE_EC2 = "AWS/EC2"
 AWS_NAMESPACE_EBS = "AWS/EBS"
 AWS_NAMESPACE_ELB = "AWS/ELB"
 AWS_NAMESPACE_RDS = "AWS/RDS"
-AWS_NAMESPACE_Elasticache = "AWS/ElastiCache"
+AWS_NAMESPACE_ELASTICACHE = "AWS/ElastiCache"
 
 EC2_METRIC_TYPE = "ec2-metric"
 EBS_METRIC_TYPE = "ebs-metric"
@@ -273,7 +273,7 @@ opts.each { |opt, arg|
     when '--elasticache-metric'
       metric = arg
       metric_type = Elasticache_METRIC_TYPE
-      namespace = AWS_NAMESPACE_Elasticache
+      namespace = AWS_NAMESPACE_ELASTICACHE
     when '--stat'
       stat = arg
     # threshold and ranges
@@ -295,7 +295,7 @@ elsif namespace.eql?(AWS_NAMESPACE_RDS)
   dimensions = [{"Name" => "DBInstanceIdentifier", "Value" => instance_id}] # where instance_id = db name
 elsif namespace.eql?(AWS_NAMESPACE_ELB)
   dimensions = [{"Name" => "LoadBalancerName", "Value" => instance_id }] # where instance_id = elb name
-elsif namespace.eql?(AWS_NAMESPACE_Elasticache)
+elsif namespace.eql?(AWS_NAMESPACE_ELASTICACHE)
   dimensions = [{"Name" => "CacheClusterId", "Value" => instance_id }] # where instance_id = cluster id
 end
 
@@ -331,7 +331,7 @@ end
 
 if verbose == 1
   puts "** Launching AWS status retrieval on instance ID: #{instance_id}"
-  puts "Amazon AWS Endpoint: EC2 #{ec2_endpoint}, RDS #{rds_endpoint}, ELB #{elb_endpoint}"
+  puts "Amazon AWS Endpoint: EC2 #{ec2_endpoint}, RDS #{rds_endpoint}, ELB #{elb_endpoint}, ELASTICACHE #{elasticache_endpoint}"
   puts "Amazon CloudWatch Endpoint: #{cloudwatch_endpoint}"
   puts "Warning values: #{warning_values.inspect}"
   puts "Critical values: #{critical_values.inspect}"
@@ -346,7 +346,7 @@ begin
     aws_api = Fog::AWS::RDS.new(:aws_access_key_id => access_key_id, :aws_secret_access_key => secret_access_key, :region => region)
   elsif namespace.eql?(AWS_NAMESPACE_ELB)
     aws_api = Fog::AWS::ELB.new(:aws_access_key_id => access_key_id, :aws_secret_access_key => secret_access_key, :region => region)
-  elsif namespace.eql?(AWS_NAMESPACE_Elasticache)
+  elsif namespace.eql?(AWS_NAMESPACE_ELASTICACHE)
     aws_api = Fog::AWS::Elasticache.new(:aws_access_key_id => access_key_id, :aws_secret_access_key => secret_access_key, :region => region)
   end
 rescue Exception => e
@@ -401,7 +401,7 @@ begin
       #cloudwatch_enabled = EC2_STATE_ENABLED
       cloudwatch_enabled = EC2_STATE_DISABLING ## disabling
     end
-  elsif namespace.eql?(AWS_NAMESPACE_Elasticache)
+  elsif namespace.eql?(AWS_NAMESPACE_ELASTICACHE)
     #Elasticache
     instance = aws_api.describe_cache_clusters(instance_id).data[:body]
     if instance['CacheClusters'].nil? || instance['CacheClusters'].empty?
@@ -426,7 +426,7 @@ if verbose == 1
     puts "AWS RDS Instance:"
   elsif namespace.eql?(AWS_NAMESPACE_ELB)
     puts "AWS ELB Instance:"
-  elsif namespace.eql?(AWS_NAMESPACE_Elasticache)
+  elsif namespace.eql?(AWS_NAMESPACE_ELASTICACHE)
     puts "AWS Elasticache Instance:"
   end
   pp instance
