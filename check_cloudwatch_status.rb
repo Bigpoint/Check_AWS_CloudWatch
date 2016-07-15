@@ -404,12 +404,10 @@ begin
   elsif namespace.eql?(AWS_NAMESPACE_Elasticache)
     #Elasticache
     instance = aws_api.describe_cache_clusters(instance_id).data[:body]
-    puts "#{instance}"
     if instance['CacheClusters'].nil? || instance['CacheClusters'].empty?
       puts "Error occured while retrieving Elasticache instance: no instance found for ID #{instance_id}"
     else
       status = instance['CacheClusters'][0]['CacheClusterStatus']
-      puts "#{status}"
       if status.eql?("available")
         state_name = EC2_STATUS_NAME_RUNNING
       end
