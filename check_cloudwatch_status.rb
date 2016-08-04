@@ -359,7 +359,7 @@ begin
     aws_api = Fog::AWS::ELB.new(:aws_access_key_id => access_key_id, :aws_secret_access_key => secret_access_key, :region => region)
   elsif namespace.eql?(AWS_NAMESPACE_ELASTICACHE)
     aws_api = Fog::AWS::Elasticache.new(:aws_access_key_id => access_key_id, :aws_secret_access_key => secret_access_key, :region => region)
-  elsif namespace.eql?(AWS_NAMESPACE_ELASTICACHE)
+  elsif namespace.eql?(AWS_NAMESPACE_ES)
     aws_api = Fog::AWS::CloudWatch.new(:aws_access_key_id => access_key_id, :aws_secret_access_key => secret_access_key, :region => region)
   end
 rescue Exception => e
