@@ -62,6 +62,7 @@ ec2_endpoint = ''
 rds_endpoint = ''
 elb_endpoint = ''
 elasticache_endpoint = ''
+es_endpoint = ''
 cloudwatch_endpoint = ''
 region = ''
 address = ''
@@ -96,6 +97,8 @@ available = ''
     puts "                         ReadThroughput, WriteThroughput, ...)"
     puts "  --elasticache-metric, -E:      One of Amazon Elasticache Metrics"
     puts "                         (BytesUsedForCache, CacheHits, Evictions, ...)"
+    puts "  --es-metric, -X:       One of Amazon ES Metrics"
+    puts "                         (CPUUtilization, FreeStorageSpace, ClusterUsedSpace, ...)"
     puts "  --stat, -S:            Amazon Statistic used for threshold and ranges (Average, Sum, SampleCount, Maximum, Minimum)"
     exit NAGIOS_CODE_UNKNOWN
   end
@@ -163,6 +166,7 @@ opts.set_options(
 	[ "--elb-metric", "-L", GetoptLong::OPTIONAL_ARGUMENT], \
 	[ "--rds-metric", "-D", GetoptLong::OPTIONAL_ARGUMENT], \
 	[ "--elasticache-metric", "-E", GetoptLong::OPTIONAL_ARGUMENT], \
+	[ "--es-metric", "-X", GetoptLong::OPTIONAL_ARGUMENT], \
 	[ "--stat", "-S", GetoptLong::OPTIONAL_ARGUMENT], \
 	[ "--warning", "-w", GetoptLong::OPTIONAL_ARGUMENT], \
 	[ "--critical", "-c", GetoptLong::OPTIONAL_ARGUMENT] )
@@ -274,6 +278,10 @@ opts.each { |opt, arg|
       metric = arg
       metric_type = ELASTICACHE_METRIC_TYPE
       namespace = AWS_NAMESPACE_ELASTICACHE
+    when '--es-metric'
+      metric = arg
+      metric_type = ES_METRIC_TYPE
+      namespace = AWS_NAMESPACE_ES
     when '--stat'
       stat = arg
     # threshold and ranges
@@ -297,6 +305,9 @@ elsif namespace.eql?(AWS_NAMESPACE_ELB)
   dimensions = [{"Name" => "LoadBalancerName", "Value" => instance_id }] # where instance_id = elb name
 elsif namespace.eql?(AWS_NAMESPACE_ELASTICACHE)
   dimensions = [{"Name" => "CacheClusterId", "Value" => instance_id }] # where instance_id = cluster id
+elsif namespace.eql?(AWS_NAMESPACE_ES)
+  inst, domain = instance_id.split(":")
+  dimensions = [{"Name" => "ClientId", "Value" => inst }, {"Name" => "DomainName", "Value" => domain }] # where instance_id = client id
 end
 
 begin
@@ -348,6 +359,8 @@ begin
     aws_api = Fog::AWS::ELB.new(:aws_access_key_id => access_key_id, :aws_secret_access_key => secret_access_key, :region => region)
   elsif namespace.eql?(AWS_NAMESPACE_ELASTICACHE)
     aws_api = Fog::AWS::Elasticache.new(:aws_access_key_id => access_key_id, :aws_secret_access_key => secret_access_key, :region => region)
+  elsif namespace.eql?(AWS_NAMESPACE_ELASTICACHE)
+    aws_api = Fog::AWS::CloudWatch.new(:aws_access_key_id => access_key_id, :aws_secret_access_key => secret_access_key, :region => region)
   end
 rescue Exception => e
   puts "Error occured while trying to connect to AWS Endpoint: " + e
@@ -412,6 +425,10 @@ begin
         state_name = EC2_STATUS_NAME_RUNNING
       end
     end
+  elsif namespace.eql?(AWS_NAMESPACE_ES)
+    #ES
+    #TODO: Add checks before setting the state name.
+    state_name = EC2_STATUS_NAME_RUNNING
   end
 rescue Exception => e
   puts "Error occured while trying to retrieve AWS instance: " + e
@@ -428,6 +445,8 @@ if verbose == 1
     puts "AWS ELB Instance:"
   elsif namespace.eql?(AWS_NAMESPACE_ELASTICACHE)
     puts "AWS Elasticache Instance:"
+  elsif namespace.eql?(AWS_NAMESPACE_ES)
+    puts "AWS ES Instance:"
   end
   pp instance
 end
