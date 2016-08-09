@@ -11,6 +11,8 @@
 
 %w[ getoptlong rubygems fog pp base64 openssl ].each { |f| require f }
 
+require 'aws-sdk'
+
 #puts AWS::Cloudwatch::API_VERSION
 
 
@@ -36,12 +38,14 @@ AWS_NAMESPACE_EBS = "AWS/EBS"
 AWS_NAMESPACE_ELB = "AWS/ELB"
 AWS_NAMESPACE_RDS = "AWS/RDS"
 AWS_NAMESPACE_ELASTICACHE = "AWS/ElastiCache"
+AWS_NAMESPACE_ELASTICSEARCH = "AWS/ES"
 
 EC2_METRIC_TYPE = "ec2-metric"
 EBS_METRIC_TYPE = "ebs-metric"
 ELB_METRIC_TYPE = "elb-metric"
 RDS_METRIC_TYPE = "rds-metric"
 ELASTICACHE_METRIC_TYPE = "elasticache-metric"
+ELASTICSEARCH_METRIC_TYPE = "elasticsearch-metric"
 
 NAGIOS_CODE_OK = 0		# UP
 NAGIOS_CODE_WARNING = 1		# UP or DOWN/UNREACHABLE*
@@ -62,7 +66,7 @@ ec2_endpoint = ''
 rds_endpoint = ''
 elb_endpoint = ''
 elasticache_endpoint = ''
-es_endpoint = ''
+elasticsearch_endpoint = ''
 cloudwatch_endpoint = ''
 region = ''
 address = ''
@@ -97,7 +101,7 @@ available = ''
     puts "                         ReadThroughput, WriteThroughput, ...)"
     puts "  --elasticache-metric, -E:      One of Amazon Elasticache Metrics"
     puts "                         (BytesUsedForCache, CacheHits, Evictions, ...)"
-    puts "  --es-metric, -X:       One of Amazon ES Metrics"
+    puts "  --elasticsearch-metric, -X:       One of Amazon Elasticsearch Metrics"
     puts "                         (CPUUtilization, FreeStorageSpace, ClusterUsedSpace, ...)"
     puts "  --stat, -S:            Amazon Statistic used for threshold and ranges (Average, Sum, SampleCount, Maximum, Minimum)"
     exit NAGIOS_CODE_UNKNOWN
@@ -166,7 +170,7 @@ opts.set_options(
 	[ "--elb-metric", "-L", GetoptLong::OPTIONAL_ARGUMENT], \
 	[ "--rds-metric", "-D", GetoptLong::OPTIONAL_ARGUMENT], \
 	[ "--elasticache-metric", "-E", GetoptLong::OPTIONAL_ARGUMENT], \
-	[ "--es-metric", "-X", GetoptLong::OPTIONAL_ARGUMENT], \
+	[ "--elasticsearch-metric", "-X", GetoptLong::OPTIONAL_ARGUMENT], \
 	[ "--stat", "-S", GetoptLong::OPTIONAL_ARGUMENT], \
 	[ "--warning", "-w", GetoptLong::OPTIONAL_ARGUMENT], \
 	[ "--critical", "-c", GetoptLong::OPTIONAL_ARGUMENT] )
@@ -192,6 +196,7 @@ opts.each { |opt, arg|
           rds_endpoint = "rds.us-east-1.amazonaws.com"
           elb_endpoint = "elasticloadbalancing.us-east-1.amazonaws.com"
           elasticache_endpoint = "elasticache.us-east-1.amazonaws.com"
+          elasticsearch_endpoint = "es.us-east-1.amazonaws.com"
           cloudwatch_endpoint = "monitoring.us-east-1.amazonaws.com"
           region = "us-east-1"
         when /us-west-1/
@@ -199,6 +204,7 @@ opts.each { |opt, arg|
           rds_endpoint = "rds.us-west-1.amazonaws.com"
           elb_endpoint = "elasticloadbalancing.us-west-1.amazonaws.com"
           elasticache_endpoint = "elasticache.us-west-1.amazonaws.com"
+          elasticsearch_endpoint = "es.us-west-1.amazonaws.com"
           cloudwatch_endpoint = "monitoring.us-west-1.amazonaws.com"
           region = "us-west-1"
         when /us-west-2/
@@ -206,6 +212,7 @@ opts.each { |opt, arg|
           rds_endpoint = "rds.us-west-2.amazonaws.com"
           elb_endpoint = "elasticloadbalancing.us-west-2.amazonaws.com"
           elasticache_endpoint = "elasticache.us-west-2.amazonaws.com"
+          elasticsearch_endpoint = "es.us-west-2.amazonaws.com"
           cloudwatch_endpoint = "monitoring.us-west-2.amazonaws.com"
           region = "us-west-2"  
         when /eu-west-1/
@@ -213,6 +220,7 @@ opts.each { |opt, arg|
           rds_endpoint = "rds.eu-west-1.amazonaws.com"
           elb_endpoint = "elasticloadbalancing.eu-west-1.amazonaws.com"
           elasticache_endpoint = "elasticache.eu-west-1.amazonaws.com"
+          elasticsearch_endpoint = "es.eu-west-1.amazonaws.com"
           cloudwatch_endpoint = "monitoring.eu-west-1.amazonaws.com"
           region = "eu-west-1"
         when /eu-central-1/
@@ -220,6 +228,7 @@ opts.each { |opt, arg|
           rds_endpoint = "rds.eu-central-1.amazonaws.com"
           elb_endpoint = "elasticloadbalancing.eu-central-1.amazonaws.com"
           elasticache_endpoint = "elasticache.eu-central-1.amazonaws.com"
+          elasticsearch_endpoint = "es.eu-central-1.amazonaws.com"
           cloudwatch_endpoint = "monitoring.eu-central-1.amazonaws.com"
           region = "eu-central-1"
         when /ap-southeast-1/
@@ -227,6 +236,7 @@ opts.each { |opt, arg|
           rds_endpoint = "rds.ap-southeast-1.amazonaws.com"
           elb_endpoint = "elasticloadbalancing.ap-southeast-1.amazonaws.com"
           elasticache_endpoint = "elasticache.ap-southeast-1.amazonaws.com"
+          elasticsearch_endpoint = "es.ap-southeast-1.amazonaws.com"
           cloudwatch_endpoint = "monitoring.ap-southeast-1.amazonaws.com"
           region = "ap-southeast-1"
         when /ap-southeast-2/
@@ -234,6 +244,7 @@ opts.each { |opt, arg|
           rds_endpoint = "rds.ap-southeast-2.amazonaws.com"
           elb_endpoint = "elasticloadbalancing.ap-southeast-2.amazonaws.com"
           elasticache_endpoint = "elasticache.ap-southeast-2.amazonaws.com"
+          elasticsearch_endpoint = "es.ap-southeast-2.amazonaws.com"
           cloudwatch_endpoint = "monitoring.ap-southeast-2.amazonaws.com"
           region = "ap-southeast-2"
         when /ap-northeast-1/
@@ -241,6 +252,7 @@ opts.each { |opt, arg|
           rds_endpoint = "rds.ap-northeast-1.amazonaws.com"
           elb_endpoint = "elasticloadbalancing.ap-northeast-1.amazonaws.com"
           elasticache_endpoint = "elasticache.ap-northeast-1.amazonaws.com"
+          elasticsearch_endpoint = "es.ap-northeast-1.amazonaws.com"
           cloudwatch_endpoint = "monitoring.ap-northeast-1.amazonaws.com"
           region = "ap-northeast-1"
         when /sa-east-1/
@@ -248,6 +260,7 @@ opts.each { |opt, arg|
           rds_endpoint = "rds.sa-east-1.amazonaws.com"
           elb_endpoint = "elasticloadbalancing.sa-east-1.amazonaws.com"
           elasticache_endpoint = "elasticache.sa-east-1.amazonaws.com"
+          elasticsearch_endpoint = "es.sa-east-1.amazonaws.com"
           cloudwatch_endpoint = "monitoring.sa-east-1.amazonaws.com"
           region = "sa-east-1"
         else
@@ -255,6 +268,7 @@ opts.each { |opt, arg|
           rds_endpoint = "rds.us-east-1.amazonaws.com"
           elb_endpoint = "elasticloadbalancing.us-east-1.amazonaws.com"
           elasticache_endpoint = "elasticache.us-east-1.amazonaws.com"
+          elasticsearch_endpoint = "es.us-east-1.amazonaws.com"
           cloudwatch_endpoint = "monitoring.amazonaws.com"
           region = "us-east-1"
       end 
@@ -278,10 +292,10 @@ opts.each { |opt, arg|
       metric = arg
       metric_type = ELASTICACHE_METRIC_TYPE
       namespace = AWS_NAMESPACE_ELASTICACHE
-    when '--es-metric'
+    when '--elasticsearch-metric'
       metric = arg
-      metric_type = ES_METRIC_TYPE
-      namespace = AWS_NAMESPACE_ES
+      metric_type = ELASTICSEARCH_METRIC_TYPE
+      namespace = AWS_NAMESPACE_ELASTICSEARCH
     when '--stat'
       stat = arg
     # threshold and ranges
@@ -305,7 +319,7 @@ elsif namespace.eql?(AWS_NAMESPACE_ELB)
   dimensions = [{"Name" => "LoadBalancerName", "Value" => instance_id }] # where instance_id = elb name
 elsif namespace.eql?(AWS_NAMESPACE_ELASTICACHE)
   dimensions = [{"Name" => "CacheClusterId", "Value" => instance_id }] # where instance_id = cluster id
-elsif namespace.eql?(AWS_NAMESPACE_ES)
+elsif namespace.eql?(AWS_NAMESPACE_ELASTICSEARCH)
   inst, domain = instance_id.split(":")
   dimensions = [{"Name" => "ClientId", "Value" => inst }, {"Name" => "DomainName", "Value" => domain }] # where instance_id = client id
 end
@@ -318,7 +332,7 @@ begin
 
   if use_rsa
     decrypt_key = OpenSSL::PKey::RSA.new(File.read(key_file))
-  
+
     access_key_id = decrypt_key.private_decrypt(Base64.decode64(encrypted_access_key_id))
     secret_access_key = decrypt_key.private_decrypt(Base64.decode64(encrypted_secret_access_key))
   else
@@ -342,7 +356,7 @@ end
 
 if verbose == 1
   puts "** Launching AWS status retrieval on instance ID: #{instance_id}"
-  puts "Amazon AWS Endpoint: EC2 #{ec2_endpoint}, RDS #{rds_endpoint}, ELB #{elb_endpoint}, ELASTICACHE #{elasticache_endpoint}"
+  puts "Amazon AWS Endpoint: EC2 #{ec2_endpoint}, RDS #{rds_endpoint}, ELB #{elb_endpoint}, ELASTICACHE #{elasticache_endpoint}, ELASTICSEARCH #{elasticsearch_endpoint}"
   puts "Amazon CloudWatch Endpoint: #{cloudwatch_endpoint}"
   puts "Warning values: #{warning_values.inspect}"
   puts "Critical values: #{critical_values.inspect}"
@@ -359,8 +373,8 @@ begin
     aws_api = Fog::AWS::ELB.new(:aws_access_key_id => access_key_id, :aws_secret_access_key => secret_access_key, :region => region)
   elsif namespace.eql?(AWS_NAMESPACE_ELASTICACHE)
     aws_api = Fog::AWS::Elasticache.new(:aws_access_key_id => access_key_id, :aws_secret_access_key => secret_access_key, :region => region)
-  elsif namespace.eql?(AWS_NAMESPACE_ES)
-    aws_api = Fog::AWS::CloudWatch.new(:aws_access_key_id => access_key_id, :aws_secret_access_key => secret_access_key, :region => region)
+  elsif namespace.eql?(AWS_NAMESPACE_ELASTICSEARCH)
+    aws_api = Aws::ElasticsearchService::Client.new(:region=> region, :access_key_id => access_key_id, :secret_access_key => secret_access_key)
   end
 rescue Exception => e
   puts "Error occured while trying to connect to AWS Endpoint: " + e
@@ -425,10 +439,13 @@ begin
         state_name = EC2_STATUS_NAME_RUNNING
       end
     end
-  elsif namespace.eql?(AWS_NAMESPACE_ES)
+  elsif namespace.eql?(AWS_NAMESPACE_ELASTICSEARCH)
     #ES
-    #TODO: Add checks before setting the state name.
-    state_name = EC2_STATUS_NAME_RUNNING
+    response = aws_api.describe_elasticsearch_domain({:domain_name => domain})
+    param_domain_id = inst+"/"+domain
+    if response.domain_status.domain_id.eql?(param_domain_id)
+      state_name = EC2_STATUS_NAME_RUNNING
+    end
   end
 rescue Exception => e
   puts "Error occured while trying to retrieve AWS instance: " + e
@@ -445,8 +462,8 @@ if verbose == 1
     puts "AWS ELB Instance:"
   elsif namespace.eql?(AWS_NAMESPACE_ELASTICACHE)
     puts "AWS Elasticache Instance:"
-  elsif namespace.eql?(AWS_NAMESPACE_ES)
-    puts "AWS ES Instance:"
+  elsif namespace.eql?(AWS_NAMESPACE_ELASTICSEARCH)
+    puts "AWS Elasticsearch Instance:"
   end
   pp instance
 end
