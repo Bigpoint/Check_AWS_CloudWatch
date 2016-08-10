@@ -5,6 +5,9 @@ https://exchange.nagios.org/directory/Plugins/Operating-Systems/*-Virtual-Enviro
 
 
 #####   CHANGELIST  #####
+##  1.0.2
+    -   Added support for Elasticsearch metrics (to be used with  the --elasticsearch-metric option)
+        for instance, call it with "-f /path/to/credentials -i ClientId:DomainName -a eu-west-1 -X CPUUtilization -w 1000:79 -S Average,Minimum,Maximum"
 
 ##  1.0.1
     -   Added support for Elasticache metric (to be used with  the --elasticache-metric option)
